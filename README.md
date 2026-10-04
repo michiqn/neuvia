@@ -141,4 +141,4 @@ supabase/
 ## Status
 
 A prototype from a university course; it's no longer actively developed. The first scaffold was generated with
-Lovable, and the app was then built out by hand.
+Lovable, and the app was then built out by hand and with claude.
