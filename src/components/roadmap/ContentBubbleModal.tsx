@@ -1,13 +1,13 @@
-import { MathText } from "@/components/MathText";
 import { getSelectedTextWithMath, normalizeMath } from "@/lib/math";
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useRef } from "react";
-import { X, Send, Loader2, Pencil, Check, ImageIcon } from "lucide-react";
+import { X, Loader2, Pencil, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentBubble } from "@/types/learning";
 import BubbleNode from "./BubbleNode";
+import ContentChat from "./ContentChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,11 +23,6 @@ interface ContentBubbleModalProps {
   onSave: (title: string, content: string) => void;
 }
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 const ContentBubbleModal = ({
   bubble,
   isOpen,
@@ -39,16 +34,12 @@ const ContentBubbleModal = ({
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [askAiInput, setAskAiInput] = useState("");
   const [highlightedText, setHighlightedText] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
   const [contentHeight, setContentHeight] = useState(350); // Default height in pixels
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const resizeStartY = useRef<number>(0);
   const resizeStartHeight = useRef<number>(0);
   const { toast } = useToast();
@@ -72,7 +63,7 @@ const ContentBubbleModal = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Load chat history from database when bubble changes
+  // Reset the form when another bubble is opened
   useEffect(() => {
     if (bubble && user) {
       setTitle(bubble.title || "");
@@ -80,61 +71,8 @@ const ContentBubbleModal = ({
       setIsEditingContent(false);
       setAskAiInput("");
       setHighlightedText("");
-
-      // Load chat history
-      loadChatHistory(bubble.id);
     }
   }, [bubble, user]);
-
-  const loadChatHistory = async (contentBubbleId: string) => {
-    if (!user) return;
-
-    setLoadingHistory(true);
-    try {
-      const { data, error } = await supabase
-        .from('content_chat_messages')
-        .select('role, message, created_at')
-        .eq('content_bubble_id', contentBubbleId)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      if (data) {
-        setChatMessages(data.map(msg => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.message,
-        })));
-      }
-    } catch (error) {
-      console.error('Error loading chat history:', error);
-      // Silently fail - chat history is not critical
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  const saveChatMessage = async (role: "user" | "assistant", message: string) => {
-    if (!bubble || !user) return;
-
-    try {
-      await supabase.from('content_chat_messages').insert({
-        content_bubble_id: bubble.id,
-        user_id: user.id,
-        role,
-        message,
-      });
-    } catch (error) {
-      console.error('Error saving chat message:', error);
-      // Continue even if save fails
-    }
-  };
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
 
   // Resize handlers - supporting both mouse and touch
   useEffect(() => {
@@ -182,84 +120,6 @@ const ContentBubbleModal = ({
       const selectedText = getSelectedTextWithMath(selection);
       setHighlightedText(selectedText);
       setAskAiInput(`"${selectedText}" - `);
-    }
-  };
-
-  const handleAskAi = async () => {
-    logger.debug('=== handleAskAi called ===');
-    logger.debug('askAiInput:', askAiInput);
-    logger.debug('isLoading:', isLoading);
-
-    if (!askAiInput.trim() || isLoading) {
-      logger.debug('Early return - input empty or already loading');
-      return;
-    }
-
-    const userMessage = askAiInput.trim();
-    logger.debug('User message:', userMessage);
-    logger.debug('Title:', title);
-    logger.debug('Content length:', content?.length);
-    logger.debug('Highlighted text:', highlightedText);
-
-    // Add user message to UI and save to database
-    setChatMessages(prev => [...prev, { role: "user", content: userMessage }]);
-    await saveChatMessage("user", userMessage);
-    setAskAiInput("");
-    setIsLoading(true);
-
-    try {
-      logger.debug('Calling supabase.functions.invoke...');
-      const requestBody = {
-        question: userMessage,
-        contentTitle: title,
-        contentText: content,
-        highlightedText: highlightedText || undefined,
-      };
-      logger.debug('Request body:', JSON.stringify(requestBody, null, 2));
-
-      const { data, error } = await supabase.functions.invoke('content-chat', {
-        body: requestBody,
-      });
-
-      logger.debug('Response received - data:', data);
-      logger.debug('Response received - error:', error);
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data?.answer) {
-        logger.debug('Got answer from AI:', data.answer);
-        // Add AI response to UI and save to database
-        setChatMessages(prev => [...prev, { role: "assistant", content: data.answer }]);
-        await saveChatMessage("assistant", data.answer);
-      } else {
-        console.error('No answer in response data:', data);
-      }
-
-      setHighlightedText("");
-    } catch (error) {
-      console.error('=== Error in handleAskAi ===');
-      console.error('Error type:', typeof error);
-      console.error('Error object:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      logger.debug('=== handleAskAi complete ===');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAskAi();
     }
   };
 
@@ -711,72 +571,15 @@ const ContentBubbleModal = ({
             )}
           </div>
 
-          {/* Ask AI Section */}
-          <div className="space-y-3 flex-1 flex flex-col min-h-0">
-            <label className="text-sm font-medium text-muted-foreground block">
-              Ask AI
-              {highlightedText && (
-                <span className="text-xs ml-2 text-primary">
-                  (Selected: "{highlightedText.slice(0, 30)}...")
-                </span>
-              )}
-            </label>
-
-            {/* Chat Messages Display */}
-            {(chatMessages.length > 0 || loadingHistory) && (
-              <div
-                ref={chatContainerRef}
-                className="flex-1 overflow-y-auto space-y-3 p-3 border border-border rounded-md bg-muted/20 min-h-[120px] max-h-[200px]"
-              >
-                {loadingHistory ? (
-                  <div className="flex justify-center items-center h-full">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  chatMessages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted border border-border'
-                        }`}
-                      >
-                        {msg.role === 'assistant' ? <MathText className="[&_p]:my-1">{msg.content}</MathText> : msg.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Input */}
-            <div className="flex gap-2 shrink-0 mt-2">
-              <Input
-                value={askAiInput}
-                onChange={(e) => setAskAiInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about this content..."
-                className="text-sm flex-1 h-12"
-                disabled={isLoading}
-              />
-              <Button
-                size="icon"
-                className="h-12 w-12"
-                onClick={handleAskAi}
-                disabled={!askAiInput.trim() || isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <ContentChat
+            contentBubbleId={bubble?.id}
+            contentTitle={title}
+            contentText={content}
+            highlightedText={highlightedText}
+            onHighlightUsed={() => setHighlightedText("")}
+            input={askAiInput}
+            onInputChange={setAskAiInput}
+          />
         </div>
 
         {/* Footer */}

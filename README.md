@@ -57,9 +57,7 @@ AI together with the lesson as context.
 Drag a tool from the menu on the right onto a lesson and it attaches to that lesson as a small bubble.
 
 <p align="center">
-  <img src="docs/screenshots/content-bubble.png" height="380" alt="Lesson with an attached quiz and IOW bubble">
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/screenshots/menu.png" height="380" alt="Menu with the learning tools: quiz, In Your Own Words, flashcards, summary, help">
+  <img src="docs/screenshots/learn-actively.png" width="70%" alt="Lesson with attached quiz, flashcard and IOW bubbles next to the tool menu">
 </p>
 
 | Quiz | In Your Own Words |

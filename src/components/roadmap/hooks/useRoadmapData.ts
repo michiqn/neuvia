@@ -44,6 +44,47 @@ export function useRoadmapData({
   const [generatingBubbles, setGeneratingBubbles] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
+  // Updates one content bubble in the nested milestone state. Uses a functional update so
+  // background saves never overwrite changes made in the meantime.
+  const updateContentBubble = (
+    milestoneId: string,
+    contentBubbleId: string,
+    update: (contentBubble: ContentBubble) => ContentBubble
+  ) => {
+    onMilestonesChange((prevMilestones) =>
+      prevMilestones.map((m) =>
+        m.id === milestoneId
+          ? { ...m, contentBubbles: m.contentBubbles.map((cb) => (cb.id === contentBubbleId ? update(cb) : cb)) }
+          : m
+      )
+    );
+  };
+
+  const updateInteraction = (
+    milestoneId: string,
+    contentBubbleId: string,
+    interactionId: string,
+    changes: Partial<Bubble>
+  ) => {
+    updateContentBubble(milestoneId, contentBubbleId, (cb) => ({
+      ...cb,
+      interactions: cb.interactions.map((i) => (i.id === interactionId ? { ...i, ...changes } : i)),
+    }));
+  };
+
+  // Runs a persistence callback (if the page provided one); returns false and shows a toast if it fails
+  const persist = async (save: (() => Promise<unknown>) | null | undefined, logLabel: string, errorDescription: string) => {
+    if (!save) return true;
+    try {
+      await save();
+      return true;
+    } catch (error) {
+      console.error(`Error saving ${logLabel}:`, error);
+      toast({ title: "Error", description: errorDescription, variant: "destructive" });
+      return false;
+    }
+  };
+
   // Toggle milestone expansion
   const toggleMilestone = (id: string) => {
     onMilestonesChange(
@@ -290,22 +331,10 @@ export function useRoadmapData({
       }
     }
 
-    // Use functional update to ensure we're working with latest state
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            contentBubbles: m.contentBubbles.map((cb) =>
-              cb.id === contentBubbleId
-                ? { ...cb, interactions: [...cb.interactions, newInteraction] }
-                : cb
-            ),
-          };
-        }
-        return m;
-      })
-    );
+    updateContentBubble(milestoneId, contentBubbleId, (cb) => ({
+      ...cb,
+      interactions: [...cb.interactions, newInteraction],
+    }));
 
     return true;
   };
@@ -361,77 +390,30 @@ export function useRoadmapData({
         }
       }
 
-      // Use functional update to ensure we're working with latest state
-      onMilestonesChange((prevMilestones) =>
-        prevMilestones.map((m) => {
-          if (m.id === draggingExisting.milestoneId) {
-            return {
-              ...m,
-              contentBubbles: m.contentBubbles.map((cb) => {
-                if (cb.id === draggingExisting.contentBubbleId) {
-                  return {
-                    ...cb,
-                    interactions: cb.interactions.filter(
-                      (i) => i.id !== draggingExisting.interactionId
-                    ),
-                  };
-                }
-                return cb;
-              }),
-            };
-          }
-          return m;
-        })
-      );
+      updateContentBubble(draggingExisting.milestoneId, draggingExisting.contentBubbleId, (cb) => ({
+        ...cb,
+        interactions: cb.interactions.filter((i) => i.id !== draggingExisting.interactionId),
+      }));
     }
   };
 
   // Save content bubble
   const saveContentBubble = async (title: string, content: string, milestoneId: string, bubbleId: string) => {
-    const milestone = milestones.find((m) => m.id === milestoneId);
-    if (!milestone) return;
-
-    const existingBubble = milestone.contentBubbles.find((b) => b.id === bubbleId);
+    const existingBubble = milestones
+      .find((m) => m.id === milestoneId)
+      ?.contentBubbles.find((b) => b.id === bubbleId);
     if (!existingBubble) return;
 
-    const updatedBubble: ContentBubble = {
-      ...existingBubble,
-      title,
-      content,
-    };
-
-    if (onSaveContentBubble) {
-      try {
-        await onSaveContentBubble(milestoneId, updatedBubble);
-      } catch (error) {
-        console.error("Error saving content bubble:", error);
-        toast({
-          title: "Error",
-          description: "Failed to save changes",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Use functional update to ensure we're working with latest state
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) =>
-        m.id === milestoneId
-          ? {
-              ...m,
-              contentBubbles: m.contentBubbles.map((cb) =>
-                cb.id === bubbleId ? updatedBubble : cb
-              ),
-            }
-          : m
-      )
+    const updatedBubble: ContentBubble = { ...existingBubble, title, content };
+    const saved = await persist(
+      onSaveContentBubble && (() => onSaveContentBubble(milestoneId, updatedBubble)),
+      "content bubble",
+      "Failed to save changes"
     );
+    if (!saved) return;
 
-    toast({
-      title: "Saved",
-      description: "Content updated successfully",
-    });
+    updateContentBubble(milestoneId, bubbleId, () => updatedBubble);
+    toast({ title: "Saved", description: "Content updated successfully" });
   };
 
   // Save quiz questions
@@ -442,43 +424,12 @@ export function useRoadmapData({
     quizzes: QuizQuestion[],
     shouldSummarize?: boolean
   ) => {
-    if (onSaveQuizzes) {
-      try {
-        await onSaveQuizzes(bubbleId, quizzes, shouldSummarize);
-      } catch (error) {
-        console.error("Error saving quizzes:", error);
-        toast({
-          title: "Error",
-          description: "Failed to save quizzes",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Use functional update to ensure we're working with latest state
-    // This prevents background saves from overwriting interim changes
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            contentBubbles: m.contentBubbles.map((cb) => {
-              if (cb.id === contentBubbleId) {
-                return {
-                  ...cb,
-                  interactions: cb.interactions.map((i) =>
-                    i.id === bubbleId ? { ...i, quizzes } : i
-                  ),
-                };
-              }
-              return cb;
-            }),
-          };
-        }
-        return m;
-      })
+    const saved = await persist(
+      onSaveQuizzes && (() => onSaveQuizzes(bubbleId, quizzes, shouldSummarize)),
+      "quizzes",
+      "Failed to save quizzes"
     );
+    if (saved) updateInteraction(milestoneId, contentBubbleId, bubbleId, { quizzes });
   };
 
   // Save flashcards
@@ -489,43 +440,12 @@ export function useRoadmapData({
     flashcards: FlashcardEntry[],
     shouldSummarize?: boolean
   ) => {
-    if (onSaveFlashcards) {
-      try {
-        await onSaveFlashcards(bubbleId, flashcards, shouldSummarize);
-      } catch (error) {
-        console.error("Error saving flashcards:", error);
-        toast({
-          title: "Error",
-          description: "Failed to save flashcards",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Use functional update to ensure we're working with latest state
-    // This prevents background saves from overwriting interim changes
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            contentBubbles: m.contentBubbles.map((cb) => {
-              if (cb.id === contentBubbleId) {
-                return {
-                  ...cb,
-                  interactions: cb.interactions.map((i) =>
-                    i.id === bubbleId ? { ...i, flashcards } : i
-                  ),
-                };
-              }
-              return cb;
-            }),
-          };
-        }
-        return m;
-      })
+    const saved = await persist(
+      onSaveFlashcards && (() => onSaveFlashcards(bubbleId, flashcards, shouldSummarize)),
+      "flashcards",
+      "Failed to save flashcards"
     );
+    if (saved) updateInteraction(milestoneId, contentBubbleId, bubbleId, { flashcards });
   };
 
   // Save IOW entries
@@ -536,80 +456,25 @@ export function useRoadmapData({
     iowEntries: IOWEntry[],
     shouldSummarize?: boolean
   ) => {
-    if (onSaveIOWEntries) {
-      try {
-        await onSaveIOWEntries(bubbleId, iowEntries, shouldSummarize);
-      } catch (error) {
-        console.error("Error saving IOW entries:", error);
-        toast({
-          title: "Error",
-          description: "Failed to save entries",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Use functional update to ensure we're working with latest state
-    // This prevents background saves from overwriting interim changes
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            contentBubbles: m.contentBubbles.map((cb) => {
-              if (cb.id === contentBubbleId) {
-                return {
-                  ...cb,
-                  interactions: cb.interactions.map((i) =>
-                    i.id === bubbleId ? { ...i, iowEntries } : i
-                  ),
-                };
-              }
-              return cb;
-            }),
-          };
-        }
-        return m;
-      })
+    const saved = await persist(
+      onSaveIOWEntries && (() => onSaveIOWEntries(bubbleId, iowEntries, shouldSummarize)),
+      "IOW entries",
+      "Failed to save entries"
     );
+    if (saved) updateInteraction(milestoneId, contentBubbleId, bubbleId, { iowEntries });
   };
 
   // Save summary
   const saveSummary = async (milestoneId: string, contentBubbleId: string, summary: SummaryData) => {
-    if (onSaveSummaryProp) {
-      try {
-        await onSaveSummaryProp(contentBubbleId, summary);
-      } catch (error) {
-        console.error("Error saving summary:", error);
-        toast({
-          title: "Error",
-          description: "Failed to save summary",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Use functional update to ensure we're working with latest state
-    onMilestonesChange((prevMilestones) =>
-      prevMilestones.map((m) => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            contentBubbles: m.contentBubbles.map((cb) =>
-              cb.id === contentBubbleId ? { ...cb, summary } : cb
-            ),
-          };
-        }
-        return m;
-      })
+    const saved = await persist(
+      onSaveSummaryProp && (() => onSaveSummaryProp(contentBubbleId, summary)),
+      "summary",
+      "Failed to save summary"
     );
+    if (!saved) return;
 
-    toast({
-      title: "Summary saved",
-      description: "Your summary has been updated",
-    });
+    updateContentBubble(milestoneId, contentBubbleId, (cb) => ({ ...cb, summary }));
+    toast({ title: "Summary saved", description: "Your summary has been updated" });
   };
 
   // Save milestone
