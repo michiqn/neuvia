@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Caveat:wght@500;600&display=swap');
+
+/* Oddval Logotype Font (for Neuvia logo/header) */
+@font-face {
+  font-family: 'Oddval';
+  src: url('/fonts/Oddval-Logotype.woff2') format('woff2'),
+       url('/fonts/Oddval-Logotype.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Futuristic / GS Font Family */
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-Light.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-Regular.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-Medium.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-Semibold.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-LightItalic.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-LightItalic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-RegularItalic.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-RegularItalic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-MediumItalic.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Futuristic GS';
+  src: url('/fonts/FuturisticGS-SemiboldItalic.woff2') format('woff2'),
+       url('/fonts/FuturisticGS-SemiboldItalic.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Neuvia Theme Colors */
+    /* Light Beige: #f4f5f1, Weiß: #ffffff, Hellgrau: #d8d8ce, Mittelgrau: #a8aaa0 */
+    /* Dark Text: #2d2d2d, Orange 1: #f7930f, Orange 2: #f97000 */
+    /* Blau: #002ff5, Dark Blue: #020062 */
+
+    --background: 0 0% 100%;  /* Weiß #ffffff */
+    --foreground: 0 0% 18%;  /* Dark Text #2d2d2d */
+
+    --card: 60 20% 96%;  /* Light Beige #f4f5f1 - lighter for learning paths */
+    --card-foreground: 0 0% 18%;
+
+    --popover: 0 0% 100%;  /* Weiß */
+    --popover-foreground: 0 0% 18%;
+
+    --primary: 33 93% 51%;  /* Orange 1 #f7930f */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 228 100% 48%;  /* Blau #002ff5 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 60 11% 84%;  /* Hellgrau #d8d8ce */
+    --muted-foreground: 75 7% 40%;  /* Mittelgrau tone */
+
+    --accent: 26 100% 49%;  /* Orange 2 #f97000 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 75 7% 65%;  /* Mittelgrau #a8aaa0 */
+    --input: 75 7% 65%;
+    --ring: 33 93% 51%;  /* Orange 1 */
+
+    --radius: 1rem;
+
+    /* Bubble colors - using varied palette combinations */
+    --bubble-content: 33 93% 51%;  /* Orange 1 #f7930f - Main learning content */
+    --bubble-content-foreground: 0 0% 100%;
+    --bubble-quiz: 228 100% 19%;  /* Dark Blue #020062 - Testing knowledge */
+    --bubble-quiz-foreground: 0 0% 100%;
+    --bubble-flashcard: 228 100% 48%;  /* Blue #002ff5 - Memorization */
+    --bubble-flashcard-foreground: 0 0% 100%;
+    --bubble-iow: 26 100% 49%;  /* Orange 2 #f97000 - Explanation */
+    --bubble-iow-foreground: 0 0% 100%;
+    --bubble-help: 60 11% 84%;  /* Light Grey #d8d8ce - Assistance */
+    --bubble-help-foreground: 0 0% 18%;
+    --bubble-summary: 75 7% 65%;  /* Medium Grey #a8aaa0 - Key takeaways */
+    --bubble-summary-foreground: 0 0% 18%;
+
+    /* Milestone */
+    --milestone: 60 20% 96%;  /* Light Beige #f4f5f1 */
+    --milestone-foreground: 0 0% 18%;
+    --milestone-border: 33 93% 51%;  /* Orange 1 */
+
+    /* Summary diamond */
+    --summary: 75 7% 65%;  /* Mittelgrau */
+    --summary-foreground: 0 0% 18%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 18%;
+    --sidebar-primary: 33 93% 51%;  /* Orange 1 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 60 20% 96%;  /* Light Beige */
+    --sidebar-accent-foreground: 0 0% 18%;
+    --sidebar-border: 75 7% 65%;  /* Mittelgrau */
+    --sidebar-ring: 33 93% 51%;
+
+    /* Gradients - using new colors */
+    --gradient-hero: linear-gradient(135deg, hsl(33 93% 51%) 0%, hsl(26 100% 49%) 100%);  /* Orange 1 → Orange 2 */
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(60 20% 96%) 100%);  /* Weiß → Light Beige */
+
+    /* Shadows - using Orange glow */
+    --shadow-soft: 0 4px 20px -4px hsl(33 93% 51% / 0.15);
+    --shadow-bubble: 0 4px 12px -2px hsl(0 0% 0% / 0.08);
+    --shadow-glow: 0 0 24px hsl(33 93% 51% / 0.3);  /* Orange glow */
+  }
+
+  .dark {
+    --background: 0 0% 8%;  /* Very dark background #141412 */
+    --foreground: 60 20% 96%;  /* Light Beige text */
+
+    --card: 0 0% 13%;  /* Slightly lighter than background */
+    --card-foreground: 60 20% 96%;
+
+    --popover: 0 0% 13%;
+    --popover-foreground: 60 20% 96%;
+
+    --primary: 33 93% 55%;  /* Slightly brighter Orange 1 */
+    --primary-foreground: 0 0% 8%;
+
+    --secondary: 228 100% 55%;  /* Slightly brighter Blue */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 18%;  /* Dark gray #2d2d2d */
+    --muted-foreground: 75 7% 60%;
+
+    --accent: 26 100% 52%;  /* Slightly brighter Orange 2 */
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;  /* Dark gray */
+    --input: 0 0% 18%;
+    --ring: 33 93% 55%;
+
+    --bubble-content: 33 93% 55%;        /* Brighter Orange 1 */
+    --bubble-quiz: 228 100% 25%;         /* Brighter Dark Blue */
+    --bubble-flashcard: 228 100% 55%;    /* Brighter Blue */
+    --bubble-iow: 26 100% 55%;           /* Brighter Orange 2 */
+    --bubble-help: 60 11% 70%;           /* Lighter grey for dark mode */
+    --bubble-summary: 75 7% 60%;         /* Medium Grey */
+
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 60 20% 90%;
+    --sidebar-primary: 33 93% 55%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-border: 0 0% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Futuristic GS', 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Logo font for Neuvia branding */
+  .font-logo {
+    font-family: 'Oddval', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .bubble-node {
+    @apply rounded-full flex items-center justify-center font-bold transition-all duration-300;
+    box-shadow: var(--shadow-bubble);
+  }
+
+  .bubble-node:hover {
+    transform: scale(1.08);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .connection-line {
+    stroke-dasharray: 8, 6;
+    stroke-linecap: round;
+  }
+
+  .milestone-card {
+    @apply rounded-2xl border-2 px-8 py-4 transition-all duration-300;
+    background: hsl(var(--milestone));
+    border-color: hsl(var(--milestone-border));
+  }
+
+  .milestone-card:hover {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .summary-diamond {
+    @apply rotate-45 flex items-center justify-center;
+    background: hsl(var(--summary));
+  }
+
+  .drag-menu-item {
+    @apply rounded-full cursor-grab active:cursor-grabbing transition-all duration-200;
+    box-shadow: var(--shadow-bubble);
+  }
+
+  .drag-menu-item:hover {
+    transform: scale(1.1);
+  }
+
+  .handwritten {
+    font-family: 'Space Mono', monospace;
+    font-weight: 400;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-md border;
+    background: hsl(var(--card) / 0.8);
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes pulse-soft {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .drop-zone-active {
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Drag ghost for touch devices */
+  #drag-ghost {
+    pointer-events: none !important;
+    z-index: 9999 !important;
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Prevent text selection during drag */
+  .touch-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Safari drag image fix */
+  [draggable="true"] {
+    -webkit-user-drag: element;
+  }
+}
+
+/* KaTeX defaults to 1.21em, which looks oversized next to Inter */
+.katex {
+  font-size: 1.08em;
+}

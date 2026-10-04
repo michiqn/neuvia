@@ -1,0 +1,41 @@
+project_id = "neuvia"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.generate-curriculum]
+verify_jwt = true
+
+[functions.milestone-chat]
+verify_jwt = true
+
+[functions.generate-content]
+verify_jwt = true
+
+[functions.content-chat]
+verify_jwt = true
+
+[functions.generate-flashcard]
+verify_jwt = true
+
+[functions.generate-next-milestone]
+verify_jwt = true
+
+[functions.quiz-generate-question]
+verify_jwt = true
+
+[functions.iow-generate-questions]
+verify_jwt = true
+
+[functions.iow-evaluate-answer]
+verify_jwt = true
+
+[functions.summarize-interaction]
+verify_jwt = true
+
+[functions.generate-bubble-summary]
+verify_jwt = true
